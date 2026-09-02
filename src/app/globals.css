@@ -8,7 +8,6 @@
   /* Core surfaces */
   --background: #f7f7f5;
   --foreground: #111111;
-
   --surface: #ffffff;
   --surface-muted: #eeeeeb;
   --surface-subtle: #e5e5e1;
@@ -25,7 +24,7 @@
 
   /* Brand accent
      Intentionally restrained. */
-  --accent: #1f5eff;
+  --accent: #a51c30;
   --accent-foreground: #ffffff;
 
   /* States */
@@ -45,7 +44,6 @@
   --duration-fast: 160ms;
   --duration-normal: 240ms;
   --duration-slow: 400ms;
-
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -53,7 +51,6 @@
   /* Core surfaces */
   --background: #0d0d0d;
   --foreground: #f2f2ef;
-
   --surface: #151515;
   --surface-muted: #1c1c1c;
   --surface-subtle: #242424;
@@ -69,7 +66,7 @@
   --border-strong: #444444;
 
   /* Brand accent */
-  --accent: #5c8cff;
+  --accent: #e05260;
   --accent-foreground: #ffffff;
 
   /* States */
@@ -281,7 +278,7 @@ ol {
 }
 
 .k-link:hover {
-  opacity: 0.6;
+  color: var(--accent);
 }
 
 .k-button {
@@ -313,7 +310,9 @@ ol {
 }
 
 .k-button-primary:hover {
-  opacity: 0.86;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-foreground);
 }
 
 .k-button-secondary {
@@ -323,7 +322,9 @@ ol {
 }
 
 .k-button-secondary:hover {
-  background: var(--surface-muted);
+  border-color: var(--accent);
+  background: transparent;
+  color: var(--accent);
 }
 
 /* =========================================================
