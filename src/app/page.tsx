@@ -5,6 +5,7 @@ import { Process } from "@/components/sections/process";
 import { QuestionAnswer } from "@/components/sections/question-answer";
 import { SelectedWork } from "@/components/sections/selected-work";
 import { WhatWeBuild } from "@/components/sections/what-we-build";
+import { WhyKureshtic } from "@/components/sections/why-kureshtic";
 
 export default function Home() {
   return (
@@ -18,6 +19,7 @@ export default function Home() {
         <SelectedWork />
         <Capabilities />
         <Process />
+        <WhyKureshtic />
       </main>
     </>
   );
