@@ -3,6 +3,7 @@ import { Hero } from "@/components/sections/hero";
 import { Process } from "@/components/sections/process";
 import { QuestionAnswer } from "@/components/sections/question-answer";
 import { SelectedWork } from "@/components/sections/selected-work";
+import { StartProject } from "@/components/sections/start-project";
 import { Technology } from "@/components/sections/technology";
 import { Trust } from "@/components/sections/trust";
 import { WhatWeBuild } from "@/components/sections/what-we-build";
@@ -24,6 +25,7 @@ export default function Home() {
         <WhyKureshtic />
         <Trust />
         <Technology />
+        <StartProject />
       </main>
     </>
   );
