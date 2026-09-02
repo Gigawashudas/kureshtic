@@ -1,4 +1,4 @@
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -14,6 +14,6 @@ if (!supabasePublishableKey) {
 const SUPABASE_URL: string = supabaseUrl;
 const SUPABASE_PUBLISHABLE_KEY: string = supabasePublishableKey;
 
-export function createClient() {
-  return createBrowserClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+export function createPublicClient() {
+  return createSupabaseClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 }

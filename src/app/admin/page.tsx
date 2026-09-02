@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LogOut, FolderKanban, Settings } from "lucide-react";
 
@@ -51,15 +52,15 @@ export default async function AdminPage() {
         </div>
 
         <div className="mt-14 grid gap-5 md:grid-cols-2">
-          <div className="group border border-[var(--border)] bg-[var(--surface)] p-7 transition-colors duration-200 hover:border-[var(--accent)]">
+          <Link href="/admin/projects" className="group border border-[var(--border)] bg-[var(--surface)] p-7 transition-colors duration-200 hover:border-[var(--accent)]">
             <FolderKanban size={21} strokeWidth={1.6} className="text-[var(--accent)]" aria-hidden="true" />
 
             <h2 className="mt-7 text-xl font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Projects</h2>
 
             <p className="k-body mt-3 max-w-md">Add, edit, publish, feature, and organize portfolio projects.</p>
 
-            <span className="mt-7 block text-xs font-medium uppercase tracking-[0.1em] text-[var(--text-muted)]">Coming next</span>
-          </div>
+            <span className="mt-7 block text-xs font-medium uppercase tracking-[0.1em] text-[var(--text-muted)] transition-colors duration-200 group-hover:text-[var(--accent)]">Manage projects →</span>
+          </Link>
 
           <div className="border border-[var(--border)] bg-[var(--surface)] p-7">
             <Settings size={21} strokeWidth={1.6} className="text-[var(--text-secondary)]" aria-hidden="true" />

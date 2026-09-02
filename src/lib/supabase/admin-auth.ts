@@ -12,14 +12,18 @@ if (!supabasePublishableKey) {
   throw new Error("Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 }
 
+const SUPABASE_URL: string = supabaseUrl;
+const SUPABASE_PUBLISHABLE_KEY: string = supabasePublishableKey;
+
 export async function createAdminAuthClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(supabaseUrl, supabasePublishableKey, {
+  return createServerClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
       },
+
       setAll(cookiesToSet) {
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
