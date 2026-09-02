@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ImagePlus, Save, X } from "lucide-react";
 import { FormEvent, useState } from "react";
 
@@ -28,7 +29,22 @@ function sanitizeFileName(fileName: string) {
     .replace(/-+/g, "-");
 }
 
+function normalizeProjectUrl(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  return `https://${trimmedValue}`;
+}
+
 export default function NewProjectPage() {
+  const router = useRouter();
   const supabase = createClient();
 
   const [title, setTitle] = useState("");
@@ -48,7 +64,6 @@ export default function NewProjectPage() {
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   function handleTitleChange(value: string) {
     setTitle(value);
@@ -145,7 +160,6 @@ export default function NewProjectPage() {
     event.preventDefault();
 
     setError("");
-    setSuccess(false);
 
     if (!title.trim()) {
       setError("Please enter a project title.");
@@ -179,7 +193,7 @@ export default function NewProjectPage() {
           short_description: shortDescription.trim(),
           description: description.trim(),
           client_name: clientName.trim() || null,
-          project_url: projectUrl.trim() || null,
+          project_url: normalizeProjectUrl(projectUrl),
           technology_areas: selectedTechnologyAreas,
           featured,
           published,
@@ -223,21 +237,8 @@ export default function NewProjectPage() {
         }
       }
 
-      setSuccess(true);
-
-      setTitle("");
-      setSlug("");
-      setCategory("Website");
-      setShortDescription("");
-      setDescription("");
-      setClientName("");
-      setProjectUrl("");
-      setSelectedTechnologyAreas([]);
-      setFeatured(false);
-      setPublished(false);
-      setSortOrder("0");
-      setCoverImage(null);
-      setGalleryImages([]);
+      router.push("/admin/projects");
+      router.refresh();
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : "Something went wrong while creating the project.");
     } finally {
@@ -339,7 +340,9 @@ export default function NewProjectPage() {
                   Project URL
                 </label>
 
-                <input id="projectUrl" type="url" value={projectUrl} onChange={(event) => setProjectUrl(event.target.value)} placeholder="https://example.com" className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-accent" />
+                <input id="projectUrl" type="text" inputMode="url" value={projectUrl} onChange={(event) => setProjectUrl(event.target.value)} placeholder="example.com" className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-accent" />
+
+                <p className="mt-2 text-xs text-muted-foreground">Optional. HTTPS will be added automatically when no protocol is provided.</p>
               </div>
 
               <div>
@@ -490,12 +493,6 @@ export default function NewProjectPage() {
           {error && (
             <div role="alert" className="rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
               {error}
-            </div>
-          )}
-
-          {success && (
-            <div role="status" className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
-              Project created successfully with its images.
             </div>
           )}
 

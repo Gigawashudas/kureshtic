@@ -29,6 +29,20 @@ function sanitizeFileName(fileName: string) {
     .replace(/-+/g, "-");
 }
 
+function normalizeProjectUrl(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return null;
+  }
+
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmedValue)) {
+    return trimmedValue;
+  }
+
+  return `https://${trimmedValue}`;
+}
+
 interface Project {
   id: string;
   title: string;
@@ -60,28 +74,45 @@ export default function EditProjectPage() {
   const projectId = typeof params.id === "string" ? params.id : "";
 
   const [loading, setLoading] = useState(true);
+
   const [submitting, setSubmitting] = useState(false);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
+
   const [category, setCategory] = useState<(typeof categories)[number]>("Website");
+
   const [shortDescription, setShortDescription] = useState("");
+
   const [description, setDescription] = useState("");
+
   const [clientName, setClientName] = useState("");
+
   const [projectUrl, setProjectUrl] = useState("");
+
   const [selectedTechnologyAreas, setSelectedTechnologyAreas] = useState<string[]>([]);
+
   const [featured, setFeatured] = useState(false);
+
   const [published, setPublished] = useState(false);
+
   const [sortOrder, setSortOrder] = useState("0");
 
   const [existingCover, setExistingCover] = useState<ExistingImage | null>(null);
+
   const [removeExistingCover, setRemoveExistingCover] = useState(false);
 
   const [existingGallery, setExistingGallery] = useState<ExistingImage[]>([]);
+
   const [removedGalleryPaths, setRemovedGalleryPaths] = useState<string[]>([]);
 
   const [newCoverImage, setNewCoverImage] = useState<File | null>(null);
+
+  const [newCoverPreview, setNewCoverPreview] = useState<string | null>(null);
+
   const [newGalleryImages, setNewGalleryImages] = useState<File[]>([]);
+
+  const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -116,43 +147,61 @@ export default function EditProjectPage() {
       setPublished(project.published);
       setSortOrder(String(project.sort_order));
 
-      if (project.cover_image) {
-        const { data: signedCover } = await supabase.storage.from("project-images").createSignedUrl(project.cover_image, 3600);
+      const imageResponse = await fetch(`/api/admin/projects/${projectId}/images`, {
+        method: "GET",
+        cache: "no-store",
+      });
 
-        if (signedCover?.signedUrl) {
-          setExistingCover({
-            path: project.cover_image,
-            url: signedCover.signedUrl,
-          });
-        }
+      if (!imageResponse.ok) {
+        const imageResult = await imageResponse.json().catch(() => null);
+
+        throw new Error(imageResult?.error || "Project images could not be loaded.");
       }
 
-      const galleryPaths = project.gallery ?? [];
+      const imageResult = await imageResponse.json();
 
-      if (galleryPaths.length > 0) {
-        const galleryResults = await Promise.all(
-          galleryPaths.map(async (path) => {
-            const { data: signedImage } = await supabase.storage.from("project-images").createSignedUrl(path, 3600);
-
-            if (!signedImage?.signedUrl) {
-              return null;
-            }
-
-            return {
-              path,
-              url: signedImage.signedUrl,
-            };
-          }),
-        );
-
-        setExistingGallery(galleryResults.filter((image): image is ExistingImage => image !== null));
+      if (imageResult.cover) {
+        setExistingCover(imageResult.cover);
       }
+
+      setExistingGallery(imageResult.gallery ?? []);
 
       setLoading(false);
     }
 
-    loadProject();
+    loadProject().catch((loadError) => {
+      setError(loadError instanceof Error ? loadError.message : "Something went wrong while loading the project.");
+
+      setLoading(false);
+    });
   }, [projectId, supabase]);
+
+  useEffect(() => {
+    if (!newCoverImage) {
+      setNewCoverPreview(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(newCoverImage);
+
+    setNewCoverPreview(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [newCoverImage]);
+
+  useEffect(() => {
+    const previewUrls = newGalleryImages.map((file) => URL.createObjectURL(file));
+
+    setNewGalleryPreviews(previewUrls);
+
+    return () => {
+      previewUrls.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, [newGalleryImages]);
 
   function toggleTechnologyArea(area: string) {
     setSelectedTechnologyAreas((current) => (current.includes(area) ? current.filter((item) => item !== area) : [...current, area]));
@@ -210,6 +259,7 @@ export default function EditProjectPage() {
     }
 
     setError("");
+
     setNewGalleryImages((current) => [...current, ...files]);
 
     event.target.value = "";
@@ -222,6 +272,7 @@ export default function EditProjectPage() {
   function removeExistingCoverImage() {
     setRemoveExistingCover(true);
     setExistingCover(null);
+    setNewCoverImage(null);
   }
 
   function removeNewGalleryImage(index: number) {
@@ -236,6 +287,7 @@ export default function EditProjectPage() {
 
   async function uploadImage(file: File, type: "cover" | "gallery", index?: number) {
     const safeFileName = sanitizeFileName(file.name);
+
     const timestamp = Date.now();
 
     const filePath = type === "cover" ? `projects/${projectId}/cover-${timestamp}-${safeFileName}` : `projects/${projectId}/gallery-${index ?? 0}-${timestamp}-${safeFileName}`;
@@ -297,6 +349,8 @@ export default function EditProjectPage() {
     try {
       let updatedCoverPath = existingCover?.path ?? null;
 
+      const previousCoverPath = existingCover?.path ?? null;
+
       if (removeExistingCover) {
         updatedCoverPath = null;
       }
@@ -305,6 +359,7 @@ export default function EditProjectPage() {
         const uploadedCoverPath = await uploadImage(newCoverImage, "cover");
 
         uploadedPaths.push(uploadedCoverPath);
+
         updatedCoverPath = uploadedCoverPath;
       }
 
@@ -314,6 +369,7 @@ export default function EditProjectPage() {
         const uploadedGalleryPath = await uploadImage(newGalleryImages[index], "gallery", existingGallery.length + index);
 
         uploadedPaths.push(uploadedGalleryPath);
+
         updatedGalleryPaths.push(uploadedGalleryPath);
       }
 
@@ -326,7 +382,7 @@ export default function EditProjectPage() {
           short_description: shortDescription.trim(),
           description: description.trim(),
           client_name: clientName.trim() || null,
-          project_url: projectUrl.trim() || null,
+          project_url: normalizeProjectUrl(projectUrl),
           cover_image: updatedCoverPath,
           gallery: updatedGalleryPaths,
           technology_areas: selectedTechnologyAreas,
@@ -347,72 +403,15 @@ export default function EditProjectPage() {
 
       const filesToDelete = [...removedGalleryPaths];
 
-      if (removeExistingCover && existingCover?.path && existingCover.path !== updatedCoverPath) {
-        filesToDelete.push(existingCover.path);
-      }
-
-      if (newCoverImage && existingCover?.path && existingCover.path !== updatedCoverPath) {
-        filesToDelete.push(existingCover.path);
+      if (previousCoverPath && previousCoverPath !== updatedCoverPath) {
+        filesToDelete.push(previousCoverPath);
       }
 
       await deleteStorageFiles(Array.from(new Set(filesToDelete)));
 
-      setExistingCover(
-        updatedCoverPath && newCoverImage
-          ? {
-              path: updatedCoverPath,
-              url: URL.createObjectURL(newCoverImage),
-            }
-          : null,
-      );
-
-      setNewCoverImage(null);
-      setNewGalleryImages([]);
-      setRemovedGalleryPaths([]);
-
-      const refreshedGallery = updatedGalleryPaths.filter((path) => !uploadedPaths.includes(path));
-
-      if (uploadedPaths.length > 0) {
-        const newGalleryPaths = updatedGalleryPaths.filter((path) => uploadedPaths.includes(path));
-
-        const signedNewGallery = await Promise.all(
-          newGalleryPaths.map(async (path) => {
-            const { data: signedImage } = await supabase.storage.from("project-images").createSignedUrl(path, 3600);
-
-            if (!signedImage?.signedUrl) {
-              return null;
-            }
-
-            return {
-              path,
-              url: signedImage.signedUrl,
-            };
-          }),
-        );
-
-        const existingGalleryAfterSave = await Promise.all(
-          refreshedGallery.map(async (path) => {
-            const { data: signedImage } = await supabase.storage.from("project-images").createSignedUrl(path, 3600);
-
-            if (!signedImage?.signedUrl) {
-              return null;
-            }
-
-            return {
-              path,
-              url: signedImage.signedUrl,
-            };
-          }),
-        );
-
-        setExistingGallery([...existingGalleryAfterSave.filter((image): image is ExistingImage => image !== null), ...signedNewGallery.filter((image): image is ExistingImage => image !== null)]);
-      } else {
-        setExistingGallery((current) => current.filter((image) => !removedGalleryPaths.includes(image.path)));
-      }
-
       setSuccess(true);
 
-      router.refresh();
+      router.push("/admin/projects");
     } catch (submissionError) {
       if (uploadedPaths.length > 0) {
         try {
@@ -437,14 +436,19 @@ export default function EditProjectPage() {
 
             <div className="space-y-3">
               <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+
               <div className="h-10 w-64 animate-pulse rounded bg-muted" />
+
               <div className="h-5 w-full max-w-2xl animate-pulse rounded bg-muted" />
             </div>
 
             <div className="space-y-6 rounded-xl border border-border bg-surface p-6 md:p-8">
               <div className="h-6 w-40 animate-pulse rounded bg-muted" />
+
               <div className="h-12 w-full animate-pulse rounded-lg bg-muted" />
+
               <div className="h-12 w-full animate-pulse rounded-lg bg-muted" />
+
               <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
             </div>
           </div>
@@ -490,6 +494,7 @@ export default function EditProjectPage() {
           <section className="rounded-xl border border-border bg-surface p-6 md:p-8">
             <div className="mb-6">
               <p className="k-eyebrow mb-2">Basic information</p>
+
               <h2 className="k-heading-3">Project details</h2>
             </div>
 
@@ -547,6 +552,7 @@ export default function EditProjectPage() {
           <section className="rounded-xl border border-border bg-surface p-6 md:p-8">
             <div className="mb-6">
               <p className="k-eyebrow mb-2">Additional information</p>
+
               <h2 className="k-heading-3">Project context</h2>
             </div>
 
@@ -564,7 +570,9 @@ export default function EditProjectPage() {
                   Project URL
                 </label>
 
-                <input id="projectUrl" type="url" value={projectUrl} onChange={(event) => setProjectUrl(event.target.value)} placeholder="https://example.com" className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-accent" />
+                <input id="projectUrl" type="text" inputMode="url" value={projectUrl} onChange={(event) => setProjectUrl(event.target.value)} placeholder="example.com" className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-accent" />
+
+                <p className="mt-2 text-xs text-muted-foreground">Optional. example.com will be saved as https://example.com.</p>
               </div>
 
               <div>
@@ -606,10 +614,10 @@ export default function EditProjectPage() {
                   {existingCover && !newCoverImage && <span className="text-xs text-muted-foreground">Current cover</span>}
                 </div>
 
-                {newCoverImage ? (
+                {newCoverImage && newCoverPreview ? (
                   <div className="overflow-hidden rounded-lg border border-border">
                     <div className="aspect-video bg-muted">
-                      <img src={URL.createObjectURL(newCoverImage)} alt="New cover preview" className="h-full w-full object-cover" />
+                      <img src={newCoverPreview} alt="New cover preview" className="h-full w-full object-cover" />
                     </div>
 
                     <div className="flex items-center justify-between gap-4 p-4">
@@ -713,22 +721,26 @@ export default function EditProjectPage() {
                 <input id="newGalleryImages" type="file" accept="image/*" multiple onChange={handleNewGalleryImagesChange} className="sr-only" />
 
                 {newGalleryImages.length > 0 && (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     {newGalleryImages.map((file, index) => (
-                      <div key={`${file.name}-${file.size}-${index}`} className="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <ImagePlus className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div key={`${file.name}-${file.size}-${index}`} className="overflow-hidden rounded-lg border border-border">
+                        {newGalleryPreviews[index] && (
+                          <div className="aspect-video bg-muted">
+                            <img src={newGalleryPreviews[index]} alt={`New gallery preview ${index + 1}`} className="h-full w-full object-cover" />
+                          </div>
+                        )}
 
+                        <div className="flex items-center justify-between gap-4 p-3">
                           <div className="min-w-0">
                             <p className="truncate text-sm">{file.name}</p>
 
                             <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                           </div>
-                        </div>
 
-                        <button type="button" onClick={() => removeNewGalleryImage(index)} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label={`Remove ${file.name}`}>
-                          <X className="h-4 w-4" />
-                        </button>
+                          <button type="button" onClick={() => removeNewGalleryImage(index)} className="shrink-0 rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label={`Remove ${file.name}`}>
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -740,6 +752,7 @@ export default function EditProjectPage() {
           <section className="rounded-xl border border-border bg-surface p-6 md:p-8">
             <div className="mb-6">
               <p className="k-eyebrow mb-2">Publishing</p>
+
               <h2 className="k-heading-3">Visibility & ordering</h2>
             </div>
 
