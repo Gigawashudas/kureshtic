@@ -1,12 +1,13 @@
 import { ArrowUpRight } from "lucide-react";
 
-const projects = [
+const featuredProjects = [
   {
     number: "01",
     category: "Business Platform",
     title: "NOVA",
     description: "A structured digital platform designed to help a growing business present its services, manage information, and create a clearer customer experience.",
     tags: ["Web Platform", "Business", "Responsive"],
+    featured: true,
     theme: "light",
   },
   {
@@ -15,6 +16,7 @@ const projects = [
     title: "FORM/SPACE",
     description: "A refined portfolio experience built to present spaces, projects, and design work with a strong visual hierarchy and editorial feel.",
     tags: ["Website", "Portfolio", "CMS Ready"],
+    featured: true,
     theme: "dark",
   },
   {
@@ -23,11 +25,12 @@ const projects = [
     title: "ST Photography",
     description: "A cinematic photography portfolio focused on visual storytelling, project discovery, and a simple path from browsing to enquiry.",
     tags: ["Portfolio", "Photography", "Enquiry"],
+    featured: true,
     theme: "image",
   },
 ];
 
-function ProjectVisual({ project }: { project: (typeof projects)[number] }) {
+function ProjectVisual({ project }: { project: (typeof featuredProjects)[number] }) {
   if (project.theme === "dark") {
     return (
       <div className="relative h-full min-h-72 overflow-hidden bg-[#111111] p-5 text-[#f2f2ef] sm:min-h-80 sm:p-7">
@@ -117,23 +120,25 @@ function ProjectVisual({ project }: { project: (typeof projects)[number] }) {
 }
 
 export function SelectedWork() {
+  const featured = featuredProjects.filter((project) => project.featured);
+
   return (
     <section id="work" aria-labelledby="selected-work-heading" className="k-section border-b border-[var(--border)]">
       <div className="k-container">
         <div className="grid gap-12 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-4">
-            <p className="k-eyebrow">Selected work</p>
+            <p className="k-eyebrow">Featured work</p>
 
             <h2 id="selected-work-heading" className="k-heading-2 mt-6 max-w-lg">
-              Ideas are easier to trust when you can see them.
+              A few things we&apos;ve built.
             </h2>
 
-            <p className="k-body-large mt-7 max-w-md">A few examples of how we turn business needs into practical digital experiences.</p>
+            <p className="k-body-large mt-7 max-w-md">A small selection of projects that represent the kind of digital products and experiences we create.</p>
           </div>
 
           <div className="lg:col-span-8">
             <div className="grid gap-8">
-              {projects.map((project) => (
+              {featured.map((project) => (
                 <article key={project.number} className="group overflow-hidden border border-[var(--border)] bg-[var(--surface)]">
                   <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
                     <div className="overflow-hidden border-b border-[var(--border)] lg:border-b-0 lg:border-r">
@@ -174,7 +179,7 @@ export function SelectedWork() {
             </div>
 
             <div className="mt-8 flex flex-col gap-4 border-t border-[var(--border)] pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <p className="k-body-small">More projects will be added as the portfolio grows.</p>
+              <p className="k-body-small">Only selected projects appear here.</p>
 
               <a href="#contact" className="k-link text-sm font-semibold">
                 Discuss your project
