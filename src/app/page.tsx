@@ -1,6 +1,7 @@
 import { Navigation } from "@/components/layout/navigation";
 import { Capabilities } from "@/components/sections/capabilities";
 import { Hero } from "@/components/sections/hero";
+import { Process } from "@/components/sections/process";
 import { QuestionAnswer } from "@/components/sections/question-answer";
 import { SelectedWork } from "@/components/sections/selected-work";
 import { WhatWeBuild } from "@/components/sections/what-we-build";
@@ -16,6 +17,7 @@ export default function Home() {
         <WhatWeBuild />
         <SelectedWork />
         <Capabilities />
+        <Process />
       </main>
     </>
   );
