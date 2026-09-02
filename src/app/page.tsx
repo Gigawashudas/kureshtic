@@ -1,5 +1,6 @@
 import { Capabilities } from "@/components/sections/capabilities";
 import { FinalCta } from "@/components/sections/final-cta";
+import { Footer } from "@/components/layout/footer";
 import { Hero } from "@/components/sections/hero";
 import { Navigation } from "@/components/layout/navigation";
 import { Process } from "@/components/sections/process";
@@ -29,6 +30,8 @@ export default function Home() {
         <StartProject />
         <FinalCta />
       </main>
+
+      <Footer />
     </>
   );
 }
