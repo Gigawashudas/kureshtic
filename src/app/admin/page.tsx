@@ -1,84 +1,130 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { LogOut, FolderKanban, Settings } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Inbox } from "lucide-react";
 
+import { Container } from "@/components/layout/container";
+import { Section } from "@/components/layout/section";
 import { createAdminAuthClient } from "@/lib/supabase/admin-auth";
+import { createServerAdminClient } from "@/lib/supabase/server-admin";
 
-export default async function AdminPage() {
-  const supabase = await createAdminAuthClient();
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "KURESHTIC administration dashboard.",
+};
+
+async function getStats() {
+  const authClient = await createAdminAuthClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await authClient.auth.getUser();
 
   if (!user) {
-    redirect("/admin/login");
+    return {
+      leads: 0,
+      newLeads: 0,
+      projects: 0,
+    };
   }
 
-  const { data: adminUser } = await supabase.from("admin_users").select("user_id").eq("user_id", user.id).maybeSingle();
+  const { data: adminUser } = await authClient.from("admin_users").select("user_id").eq("user_id", user.id).maybeSingle();
 
   if (!adminUser) {
-    await supabase.auth.signOut();
-    redirect("/admin/login");
+    return {
+      leads: 0,
+      newLeads: 0,
+      projects: 0,
+    };
   }
 
+  const supabase = createServerAdminClient();
+
+  const [{ data: leads }, { data: projects }] = await Promise.all([supabase.from("enquiries").select("id, status"), supabase.from("projects").select("id")]);
+
+  const allLeads = leads ?? [];
+
+  return {
+    leads: allLeads.length,
+    newLeads: allLeads.filter((lead) => lead.status === "new").length,
+    projects: projects?.length ?? 0,
+  };
+}
+
+export default async function AdminDashboard() {
+  const stats = await getStats();
+
   return (
-    <main className="min-h-screen bg-[var(--background)]">
-      <header className="border-b border-[var(--border)]">
-        <div className="k-container flex min-h-20 items-center justify-between gap-6">
+    <main className="min-h-screen bg-background text-foreground">
+      <Section spacing="large">
+        <Container>
           <div>
-            <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">KURESHTIC</p>
+            <p className="k-eyebrow">Admin</p>
 
-            <p className="mt-1 text-xs text-[var(--text-muted)]">Admin</p>
+            <h1 className="k-display mt-4">Dashboard</h1>
+
+            <p className="k-body-large mt-4 max-w-2xl text-muted-foreground">Manage KURESHTIC projects, enquiries, and business activity.</p>
           </div>
+        </Container>
+      </Section>
 
-          <form action="/api/admin/logout" method="post">
-            <button type="submit" className="k-button k-button-secondary">
-              <LogOut size={17} strokeWidth={1.7} aria-hidden="true" />
+      <Section spacing="large">
+        <Container>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Link href="/admin/leads" className="group border border-border bg-surface p-6 transition-colors hover:bg-muted/50 md:p-8">
+              <div className="flex items-start justify-between">
+                <div className="flex size-11 items-center justify-center border border-border">
+                  <Inbox className="size-5" />
+                </div>
 
-              <span className="hidden sm:inline">Sign out</span>
-            </button>
-          </form>
-        </div>
-      </header>
+                <ArrowRight className="size-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
 
-      <div className="k-container py-16 sm:py-20 lg:py-24">
-        <div className="max-w-3xl">
-          <p className="k-eyebrow">Dashboard</p>
+              <p className="k-eyebrow mt-8">Leads</p>
 
-          <h1 className="k-heading-1 mt-5">Manage KURESHTIC.</h1>
+              <p className="mt-3 text-3xl font-semibold">{stats.leads}</p>
 
-          <p className="k-body-large mt-6 max-w-2xl">Manage projects and website content from one place.</p>
-        </div>
+              <p className="k-body-small mt-2 text-muted-foreground">Total enquiries</p>
 
-        <div className="mt-14 grid gap-5 md:grid-cols-2">
-          <Link href="/admin/projects" className="group border border-[var(--border)] bg-[var(--surface)] p-7 transition-colors duration-200 hover:border-[var(--accent)]">
-            <FolderKanban size={21} strokeWidth={1.6} className="text-[var(--accent)]" aria-hidden="true" />
+              {stats.newLeads > 0 ? (
+                <p className="mt-5 text-sm font-medium text-accent">
+                  {stats.newLeads} new {stats.newLeads === 1 ? "lead" : "leads"}
+                </p>
+              ) : null}
+            </Link>
 
-            <h2 className="mt-7 text-xl font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Projects</h2>
+            <Link href="/admin/projects" className="group border border-border bg-surface p-6 transition-colors hover:bg-muted/50 md:p-8">
+              <div className="flex items-start justify-between">
+                <div className="flex size-11 items-center justify-center border border-border">
+                  <BriefcaseBusiness className="size-5" />
+                </div>
 
-            <p className="k-body mt-3 max-w-md">Add, edit, publish, feature, and organize portfolio projects.</p>
+                <ArrowRight className="size-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+              </div>
 
-            <span className="mt-7 block text-xs font-medium uppercase tracking-[0.1em] text-[var(--text-muted)] transition-colors duration-200 group-hover:text-[var(--accent)]">Manage projects →</span>
-          </Link>
+              <p className="k-eyebrow mt-8">Projects</p>
 
-          <div className="border border-[var(--border)] bg-[var(--surface)] p-7">
-            <Settings size={21} strokeWidth={1.6} className="text-[var(--text-secondary)]" aria-hidden="true" />
+              <p className="mt-3 text-3xl font-semibold">{stats.projects}</p>
 
-            <h2 className="mt-7 text-xl font-semibold tracking-[-0.025em] text-[var(--text-primary)]">Settings</h2>
+              <p className="k-body-small mt-2 text-muted-foreground">Projects in the system</p>
+            </Link>
 
-            <p className="k-body mt-3 max-w-md">Site and administration settings will live here as the CMS grows.</p>
+            <div className="border border-border bg-surface p-6 md:p-8">
+              <p className="k-eyebrow">Quick Action</p>
 
-            <span className="mt-7 block text-xs font-medium uppercase tracking-[0.1em] text-[var(--text-muted)]">Coming later</span>
+              <h2 className="k-heading-2 mt-4">Review your leads</h2>
+
+              <p className="k-body mt-3 text-muted-foreground">Keep track of new enquiries and move promising opportunities forward.</p>
+
+              <Link href="/admin/leads" className="mt-6 inline-flex items-center gap-2 text-sm font-medium">
+                Open Leads
+                <ArrowRight className="size-4 transition-transform duration-300 hover:translate-x-1" />
+              </Link>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-10 border-l-2 border-[var(--accent)] pl-5">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">Signed in as</p>
-
-          <p className="k-body-small mt-1">{user.email}</p>
-        </div>
-      </div>
+        </Container>
+      </Section>
     </main>
   );
 }

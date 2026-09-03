@@ -53,6 +53,7 @@ interface Project {
   client_name: string | null;
   project_url: string | null;
   cover_image: string | null;
+  mobile_image: string | null;
   gallery: string[];
   technology_areas: string[];
   featured: boolean;
@@ -74,44 +75,37 @@ export default function EditProjectPage() {
   const projectId = typeof params.id === "string" ? params.id : "";
 
   const [loading, setLoading] = useState(true);
-
   const [submitting, setSubmitting] = useState(false);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
-
   const [category, setCategory] = useState<(typeof categories)[number]>("Website");
-
   const [shortDescription, setShortDescription] = useState("");
-
   const [description, setDescription] = useState("");
-
   const [clientName, setClientName] = useState("");
-
   const [projectUrl, setProjectUrl] = useState("");
-
   const [selectedTechnologyAreas, setSelectedTechnologyAreas] = useState<string[]>([]);
 
   const [featured, setFeatured] = useState(false);
-
   const [published, setPublished] = useState(false);
-
   const [sortOrder, setSortOrder] = useState("0");
 
-  const [existingCover, setExistingCover] = useState<ExistingImage | null>(null);
+  const [existingDesktopImage, setExistingDesktopImage] = useState<ExistingImage | null>(null);
+  const [existingMobileImage, setExistingMobileImage] = useState<ExistingImage | null>(null);
 
-  const [removeExistingCover, setRemoveExistingCover] = useState(false);
+  const [removeExistingDesktop, setRemoveExistingDesktop] = useState(false);
+  const [removeExistingMobile, setRemoveExistingMobile] = useState(false);
 
   const [existingGallery, setExistingGallery] = useState<ExistingImage[]>([]);
-
   const [removedGalleryPaths, setRemovedGalleryPaths] = useState<string[]>([]);
 
-  const [newCoverImage, setNewCoverImage] = useState<File | null>(null);
+  const [newDesktopImage, setNewDesktopImage] = useState<File | null>(null);
+  const [newDesktopPreview, setNewDesktopPreview] = useState<string | null>(null);
 
-  const [newCoverPreview, setNewCoverPreview] = useState<string | null>(null);
+  const [newMobileImage, setNewMobileImage] = useState<File | null>(null);
+  const [newMobilePreview, setNewMobilePreview] = useState<string | null>(null);
 
   const [newGalleryImages, setNewGalleryImages] = useState<File[]>([]);
-
   const [newGalleryPreviews, setNewGalleryPreviews] = useState<string[]>([]);
 
   const [error, setError] = useState("");
@@ -125,7 +119,7 @@ export default function EditProjectPage() {
         return;
       }
 
-      const { data, error: fetchError } = await supabase.from("projects").select("id, title, slug, category, short_description, description, client_name, project_url, cover_image, gallery, technology_areas, featured, published, sort_order").eq("id", projectId).single();
+      const { data, error: fetchError } = await supabase.from("projects").select("id, title, slug, category, short_description, description, client_name, project_url, cover_image, mobile_image, gallery, technology_areas, featured, published, sort_order").eq("id", projectId).single();
 
       if (fetchError) {
         setError(fetchError.message);
@@ -160,10 +154,8 @@ export default function EditProjectPage() {
 
       const imageResult = await imageResponse.json();
 
-      if (imageResult.cover) {
-        setExistingCover(imageResult.cover);
-      }
-
+      setExistingDesktopImage(imageResult.desktop ?? null);
+      setExistingMobileImage(imageResult.mobile ?? null);
       setExistingGallery(imageResult.gallery ?? []);
 
       setLoading(false);
@@ -177,19 +169,34 @@ export default function EditProjectPage() {
   }, [projectId, supabase]);
 
   useEffect(() => {
-    if (!newCoverImage) {
-      setNewCoverPreview(null);
+    if (!newDesktopImage) {
+      setNewDesktopPreview(null);
       return;
     }
 
-    const previewUrl = URL.createObjectURL(newCoverImage);
+    const previewUrl = URL.createObjectURL(newDesktopImage);
 
-    setNewCoverPreview(previewUrl);
+    setNewDesktopPreview(previewUrl);
 
     return () => {
       URL.revokeObjectURL(previewUrl);
     };
-  }, [newCoverImage]);
+  }, [newDesktopImage]);
+
+  useEffect(() => {
+    if (!newMobileImage) {
+      setNewMobilePreview(null);
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(newMobileImage);
+
+    setNewMobilePreview(previewUrl);
+
+    return () => {
+      URL.revokeObjectURL(previewUrl);
+    };
+  }, [newMobileImage]);
 
   useEffect(() => {
     const previewUrls = newGalleryImages.map((file) => URL.createObjectURL(file));
@@ -219,7 +226,7 @@ export default function EditProjectPage() {
     return null;
   }
 
-  function handleNewCoverImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleDesktopImageChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -235,13 +242,35 @@ export default function EditProjectPage() {
     }
 
     setError("");
-    setNewCoverImage(file);
-    setRemoveExistingCover(false);
+    setNewDesktopImage(file);
+    setRemoveExistingDesktop(false);
 
     event.target.value = "";
   }
 
-  function handleNewGalleryImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function handleMobileImageChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const validationError = validateImage(file);
+
+    if (validationError) {
+      setError(validationError);
+      event.target.value = "";
+      return;
+    }
+
+    setError("");
+    setNewMobileImage(file);
+    setRemoveExistingMobile(false);
+
+    event.target.value = "";
+  }
+
+  function handleGalleryImagesChange(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
 
     if (files.length === 0) {
@@ -265,18 +294,24 @@ export default function EditProjectPage() {
     event.target.value = "";
   }
 
-  function removeNewCoverImage() {
-    setNewCoverImage(null);
+  function removeNewDesktopImage() {
+    setNewDesktopImage(null);
   }
 
-  function removeExistingCoverImage() {
-    setRemoveExistingCover(true);
-    setExistingCover(null);
-    setNewCoverImage(null);
+  function removeExistingDesktopImage() {
+    setRemoveExistingDesktop(true);
+    setExistingDesktopImage(null);
+    setNewDesktopImage(null);
   }
 
-  function removeNewGalleryImage(index: number) {
-    setNewGalleryImages((current) => current.filter((_, imageIndex) => imageIndex !== index));
+  function removeNewMobileImage() {
+    setNewMobileImage(null);
+  }
+
+  function removeExistingMobileImage() {
+    setRemoveExistingMobile(true);
+    setExistingMobileImage(null);
+    setNewMobileImage(null);
   }
 
   function removeExistingGalleryImage(path: string) {
@@ -285,12 +320,23 @@ export default function EditProjectPage() {
     setRemovedGalleryPaths((current) => (current.includes(path) ? current : [...current, path]));
   }
 
-  async function uploadImage(file: File, type: "cover" | "gallery", index?: number) {
-    const safeFileName = sanitizeFileName(file.name);
+  function removeNewGalleryImage(index: number) {
+    setNewGalleryImages((current) => current.filter((_, imageIndex) => imageIndex !== index));
+  }
 
+  async function uploadImage(file: File, type: "desktop" | "mobile" | "gallery", index?: number) {
+    const safeFileName = sanitizeFileName(file.name);
     const timestamp = Date.now();
 
-    const filePath = type === "cover" ? `projects/${projectId}/cover-${timestamp}-${safeFileName}` : `projects/${projectId}/gallery-${index ?? 0}-${timestamp}-${safeFileName}`;
+    let filePath: string;
+
+    if (type === "desktop") {
+      filePath = `projects/${projectId}/desktop-${timestamp}-${safeFileName}`;
+    } else if (type === "mobile") {
+      filePath = `projects/${projectId}/mobile-${timestamp}-${safeFileName}`;
+    } else {
+      filePath = `projects/${projectId}/gallery-${index ?? 0}-${timestamp}-${safeFileName}`;
+    }
 
     const { error: uploadError } = await supabase.storage.from("project-images").upload(filePath, file, {
       cacheControl: "3600",
@@ -342,25 +388,47 @@ export default function EditProjectPage() {
       return;
     }
 
+    if (!existingDesktopImage && !newDesktopImage) {
+      setError("Please provide a desktop view image.");
+      return;
+    }
+
+    if (!existingMobileImage && !newMobileImage) {
+      setError("Please provide a mobile view image.");
+      return;
+    }
+
     setSubmitting(true);
 
     const uploadedPaths: string[] = [];
 
     try {
-      let updatedCoverPath = existingCover?.path ?? null;
+      let updatedDesktopPath = existingDesktopImage?.path ?? null;
+      let updatedMobilePath = existingMobileImage?.path ?? null;
 
-      const previousCoverPath = existingCover?.path ?? null;
+      const previousDesktopPath = existingDesktopImage?.path ?? null;
+      const previousMobilePath = existingMobileImage?.path ?? null;
 
-      if (removeExistingCover) {
-        updatedCoverPath = null;
+      if (removeExistingDesktop) {
+        updatedDesktopPath = null;
       }
 
-      if (newCoverImage) {
-        const uploadedCoverPath = await uploadImage(newCoverImage, "cover");
+      if (removeExistingMobile) {
+        updatedMobilePath = null;
+      }
 
-        uploadedPaths.push(uploadedCoverPath);
+      if (newDesktopImage) {
+        const uploadedDesktopPath = await uploadImage(newDesktopImage, "desktop");
 
-        updatedCoverPath = uploadedCoverPath;
+        uploadedPaths.push(uploadedDesktopPath);
+        updatedDesktopPath = uploadedDesktopPath;
+      }
+
+      if (newMobileImage) {
+        const uploadedMobilePath = await uploadImage(newMobileImage, "mobile");
+
+        uploadedPaths.push(uploadedMobilePath);
+        updatedMobilePath = uploadedMobilePath;
       }
 
       const updatedGalleryPaths = existingGallery.map((image) => image.path);
@@ -369,7 +437,6 @@ export default function EditProjectPage() {
         const uploadedGalleryPath = await uploadImage(newGalleryImages[index], "gallery", existingGallery.length + index);
 
         uploadedPaths.push(uploadedGalleryPath);
-
         updatedGalleryPaths.push(uploadedGalleryPath);
       }
 
@@ -383,7 +450,8 @@ export default function EditProjectPage() {
           description: description.trim(),
           client_name: clientName.trim() || null,
           project_url: normalizeProjectUrl(projectUrl),
-          cover_image: updatedCoverPath,
+          cover_image: updatedDesktopPath,
+          mobile_image: updatedMobilePath,
           gallery: updatedGalleryPaths,
           technology_areas: selectedTechnologyAreas,
           featured,
@@ -403,8 +471,12 @@ export default function EditProjectPage() {
 
       const filesToDelete = [...removedGalleryPaths];
 
-      if (previousCoverPath && previousCoverPath !== updatedCoverPath) {
-        filesToDelete.push(previousCoverPath);
+      if (previousDesktopPath && previousDesktopPath !== updatedDesktopPath) {
+        filesToDelete.push(previousDesktopPath);
+      }
+
+      if (previousMobilePath && previousMobilePath !== updatedMobilePath) {
+        filesToDelete.push(previousMobilePath);
       }
 
       await deleteStorageFiles(Array.from(new Set(filesToDelete)));
@@ -412,6 +484,7 @@ export default function EditProjectPage() {
       setSuccess(true);
 
       router.push("/admin/projects");
+      router.refresh();
     } catch (submissionError) {
       if (uploadedPaths.length > 0) {
         try {
@@ -436,19 +509,14 @@ export default function EditProjectPage() {
 
             <div className="space-y-3">
               <div className="h-4 w-32 animate-pulse rounded bg-muted" />
-
               <div className="h-10 w-64 animate-pulse rounded bg-muted" />
-
               <div className="h-5 w-full max-w-2xl animate-pulse rounded bg-muted" />
             </div>
 
             <div className="space-y-6 rounded-xl border border-border bg-surface p-6 md:p-8">
               <div className="h-6 w-40 animate-pulse rounded bg-muted" />
-
               <div className="h-12 w-full animate-pulse rounded-lg bg-muted" />
-
               <div className="h-12 w-full animate-pulse rounded-lg bg-muted" />
-
               <div className="h-32 w-full animate-pulse rounded-lg bg-muted" />
             </div>
           </div>
@@ -572,7 +640,7 @@ export default function EditProjectPage() {
 
                 <input id="projectUrl" type="text" inputMode="url" value={projectUrl} onChange={(event) => setProjectUrl(event.target.value)} placeholder="example.com" className="w-full rounded-lg border border-border bg-background px-4 py-3 text-sm outline-none transition-colors focus:border-accent" />
 
-                <p className="mt-2 text-xs text-muted-foreground">Optional. example.com will be saved as https://example.com.</p>
+                <p className="mt-2 text-xs text-muted-foreground">Optional. HTTPS will be added automatically when no protocol is provided.</p>
               </div>
 
               <div>
@@ -599,25 +667,25 @@ export default function EditProjectPage() {
             <div className="mb-6">
               <p className="k-eyebrow mb-2">Media</p>
 
-              <h2 className="k-heading-3">Project images</h2>
+              <h2 className="k-heading-3">Project views</h2>
 
-              <p className="k-body mt-2 text-muted-foreground">Manage the cover image and project gallery. Maximum file size is 10 MB per image.</p>
+              <p className="k-body mt-2 text-muted-foreground">Add the desktop and mobile versions of the project. These are the primary project visuals. Maximum file size is 10 MB per image.</p>
             </div>
 
             <div className="space-y-10">
               <div>
                 <div className="mb-3 flex items-center justify-between gap-4">
-                  <label htmlFor="newCoverImage" className="text-sm font-medium">
-                    Cover image
+                  <label htmlFor="desktopImage" className="text-sm font-medium">
+                    Desktop view
                   </label>
 
-                  {existingCover && !newCoverImage && <span className="text-xs text-muted-foreground">Current cover</span>}
+                  {existingDesktopImage && !newDesktopImage ? <span className="text-xs text-muted-foreground">Current desktop image</span> : null}
                 </div>
 
-                {newCoverImage && newCoverPreview ? (
+                {newDesktopImage && newDesktopPreview ? (
                   <div className="overflow-hidden rounded-lg border border-border">
                     <div className="aspect-video bg-muted">
-                      <img src={newCoverPreview} alt="New cover preview" className="h-full w-full object-cover" />
+                      <img src={newDesktopPreview} alt="New desktop view preview" className="h-full w-full object-contain" />
                     </div>
 
                     <div className="flex items-center justify-between gap-4 p-4">
@@ -625,33 +693,33 @@ export default function EditProjectPage() {
                         <Upload className="h-5 w-5 shrink-0 text-accent" />
 
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium">{newCoverImage.name}</p>
+                          <p className="truncate text-sm font-medium">{newDesktopImage.name}</p>
 
-                          <p className="text-xs text-muted-foreground">{(newCoverImage.size / 1024 / 1024).toFixed(2)} MB</p>
+                          <p className="text-xs text-muted-foreground">{(newDesktopImage.size / 1024 / 1024).toFixed(2)} MB</p>
                         </div>
                       </div>
 
-                      <button type="button" onClick={removeNewCoverImage} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Remove new cover image">
+                      <button type="button" onClick={removeNewDesktopImage} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Remove new desktop image">
                         <X className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
-                ) : existingCover ? (
+                ) : existingDesktopImage ? (
                   <div className="overflow-hidden rounded-lg border border-border">
                     <div className="aspect-video bg-muted">
-                      <img src={existingCover.url} alt={`${title} cover`} className="h-full w-full object-cover" />
+                      <img src={existingDesktopImage.url} alt={`${title} desktop view`} className="h-full w-full object-contain" />
                     </div>
 
                     <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="truncate text-sm text-muted-foreground">Existing cover image</p>
+                      <p className="truncate text-sm text-muted-foreground">Existing desktop image</p>
 
                       <div className="flex flex-wrap gap-2">
-                        <label htmlFor="newCoverImage" className="k-button k-button-secondary inline-flex cursor-pointer items-center justify-center gap-2 text-sm">
+                        <label htmlFor="desktopImage" className="k-button k-button-secondary inline-flex cursor-pointer items-center justify-center gap-2 text-sm">
                           <Upload className="h-4 w-4" />
                           Replace
                         </label>
 
-                        <button type="button" onClick={removeExistingCoverImage} className="k-button inline-flex items-center justify-center gap-2 border border-error/30 text-sm text-error transition-colors hover:bg-error/5">
+                        <button type="button" onClick={removeExistingDesktopImage} className="k-button inline-flex items-center justify-center gap-2 border border-error/30 text-sm text-error transition-colors hover:bg-error/5">
                           <Trash2 className="h-4 w-4" />
                           Remove
                         </button>
@@ -659,21 +727,91 @@ export default function EditProjectPage() {
                     </div>
                   </div>
                 ) : (
-                  <label htmlFor="newCoverImage" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center transition-colors hover:border-accent">
+                  <label htmlFor="desktopImage" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center transition-colors hover:border-accent">
                     <ImagePlus className="mb-3 h-7 w-7 text-muted-foreground" />
 
-                    <span className="text-sm font-medium">Choose cover image</span>
+                    <span className="text-sm font-medium">Choose desktop image</span>
 
-                    <span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP or another supported image</span>
+                    <span className="mt-1 text-xs text-muted-foreground">Recommended landscape screenshot</span>
                   </label>
                 )}
 
-                <input id="newCoverImage" type="file" accept="image/*" onChange={handleNewCoverImageChange} className="sr-only" />
+                <input id="desktopImage" type="file" accept="image/*" onChange={handleDesktopImageChange} className="sr-only" />
               </div>
 
               <div>
                 <div className="mb-3 flex items-center justify-between gap-4">
-                  <label className="text-sm font-medium">Existing gallery</label>
+                  <label htmlFor="mobileImage" className="text-sm font-medium">
+                    Mobile view
+                  </label>
+
+                  {existingMobileImage && !newMobileImage ? <span className="text-xs text-muted-foreground">Current mobile image</span> : null}
+                </div>
+
+                {newMobileImage && newMobilePreview ? (
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <div className="flex min-h-[360px] items-center justify-center bg-muted p-6">
+                      <img src={newMobilePreview} alt="New mobile view preview" className="max-h-[520px] max-w-full object-contain" />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 p-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <Upload className="h-5 w-5 shrink-0 text-accent" />
+
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{newMobileImage.name}</p>
+
+                          <p className="text-xs text-muted-foreground">{(newMobileImage.size / 1024 / 1024).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+
+                      <button type="button" onClick={removeNewMobileImage} className="rounded-md p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" aria-label="Remove new mobile image">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                ) : existingMobileImage ? (
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <div className="flex min-h-[360px] items-center justify-center bg-muted p-6">
+                      <img src={existingMobileImage.url} alt={`${title} mobile view`} className="max-h-[520px] max-w-full object-contain" />
+                    </div>
+
+                    <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="truncate text-sm text-muted-foreground">Existing mobile image</p>
+
+                      <div className="flex flex-wrap gap-2">
+                        <label htmlFor="mobileImage" className="k-button k-button-secondary inline-flex cursor-pointer items-center justify-center gap-2 text-sm">
+                          <Upload className="h-4 w-4" />
+                          Replace
+                        </label>
+
+                        <button type="button" onClick={removeExistingMobileImage} className="k-button inline-flex items-center justify-center gap-2 border border-error/30 text-sm text-error transition-colors hover:bg-error/5">
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="mobileImage" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center transition-colors hover:border-accent">
+                    <ImagePlus className="mb-3 h-7 w-7 text-muted-foreground" />
+
+                    <span className="text-sm font-medium">Choose mobile image</span>
+
+                    <span className="mt-1 text-xs text-muted-foreground">Recommended portrait screenshot</span>
+                  </label>
+                )}
+
+                <input id="mobileImage" type="file" accept="image/*" onChange={handleMobileImageChange} className="sr-only" />
+              </div>
+
+              <div className="border-t border-border pt-10">
+                <div className="mb-3 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Gallery</p>
+
+                    <p className="mt-1 text-xs text-muted-foreground">Optional additional project images.</p>
+                  </div>
 
                   <span className="text-xs text-muted-foreground">
                     {existingGallery.length} {existingGallery.length === 1 ? "image" : "images"}
@@ -685,7 +823,7 @@ export default function EditProjectPage() {
                     {existingGallery.map((image, index) => (
                       <div key={image.path} className="overflow-hidden rounded-lg border border-border">
                         <div className="aspect-video bg-muted">
-                          <img src={image.url} alt={`${title} gallery image ${index + 1}`} className="h-full w-full object-cover" />
+                          <img src={image.url} alt={`${title} gallery image ${index + 1}`} className="h-full w-full object-contain" />
                         </div>
 
                         <div className="flex items-center justify-between gap-3 p-3">
@@ -703,32 +841,26 @@ export default function EditProjectPage() {
                     <p className="text-sm text-muted-foreground">No gallery images currently uploaded.</p>
                   </div>
                 )}
-              </div>
 
-              <div>
-                <label htmlFor="newGalleryImages" className="mb-3 block text-sm font-medium">
-                  Add gallery images
-                </label>
-
-                <label htmlFor="newGalleryImages" className="flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center transition-colors hover:border-accent">
+                <label htmlFor="newGalleryImages" className="mt-4 flex cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-border px-6 py-10 text-center transition-colors hover:border-accent">
                   <ImagePlus className="mb-3 h-7 w-7 text-muted-foreground" />
 
                   <span className="text-sm font-medium">Add gallery images</span>
 
-                  <span className="mt-1 text-xs text-muted-foreground">You can select multiple images</span>
+                  <span className="mt-1 text-xs text-muted-foreground">Optional. You can select multiple images.</span>
                 </label>
 
-                <input id="newGalleryImages" type="file" accept="image/*" multiple onChange={handleNewGalleryImagesChange} className="sr-only" />
+                <input id="newGalleryImages" type="file" accept="image/*" multiple onChange={handleGalleryImagesChange} className="sr-only" />
 
-                {newGalleryImages.length > 0 && (
+                {newGalleryImages.length > 0 ? (
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     {newGalleryImages.map((file, index) => (
                       <div key={`${file.name}-${file.size}-${index}`} className="overflow-hidden rounded-lg border border-border">
-                        {newGalleryPreviews[index] && (
+                        {newGalleryPreviews[index] ? (
                           <div className="aspect-video bg-muted">
-                            <img src={newGalleryPreviews[index]} alt={`New gallery preview ${index + 1}`} className="h-full w-full object-cover" />
+                            <img src={newGalleryPreviews[index]} alt={`New gallery preview ${index + 1}`} className="h-full w-full object-contain" />
                           </div>
-                        )}
+                        ) : null}
 
                         <div className="flex items-center justify-between gap-4 p-3">
                           <div className="min-w-0">
@@ -744,7 +876,7 @@ export default function EditProjectPage() {
                       </div>
                     ))}
                   </div>
-                )}
+                ) : null}
               </div>
             </div>
           </section>
@@ -789,22 +921,21 @@ export default function EditProjectPage() {
             </div>
           </section>
 
-          {error && (
+          {error ? (
             <div role="alert" className="rounded-lg border border-error/30 bg-error/5 px-4 py-3 text-sm text-error">
               {error}
             </div>
-          )}
+          ) : null}
 
-          {success && (
+          {success ? (
             <div role="status" className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
               Project updated successfully.
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <button type="submit" disabled={submitting} className="k-button k-button-primary inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
               <Save className="h-4 w-4" />
-
               {submitting ? "Saving Changes..." : "Save Changes"}
             </button>
 
