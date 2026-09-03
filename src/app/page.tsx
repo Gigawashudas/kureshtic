@@ -5,7 +5,7 @@ import { Hero } from "@/components/sections/hero";
 import { Navigation } from "@/components/layout/navigation";
 import { Process } from "@/components/sections/process";
 import { QuestionAnswer } from "@/components/sections/question-answer";
-import { SelectedWork } from "@/components/sections/selected-work";
+import { FeaturedWork } from "@/components/sections/featured-work";
 import { StartProject } from "@/components/sections/start-project";
 import { Technology } from "@/components/sections/technology";
 import { Trust } from "@/components/sections/trust";
@@ -19,7 +19,7 @@ export default function Home() {
         <Hero />
         <QuestionAnswer />
         <WhatWeBuild />
-        <SelectedWork />
+        <FeaturedWork />
         <Capabilities />
         <Process />
         <WhyKureshtic />
