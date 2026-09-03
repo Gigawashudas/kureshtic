@@ -15,8 +15,6 @@ import { WhyKureshtic } from "@/components/sections/why-kureshtic";
 export default function Home() {
   return (
     <>
-      <Navigation />
-
       <main>
         <Hero />
         <QuestionAnswer />
