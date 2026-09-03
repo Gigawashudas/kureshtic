@@ -39,7 +39,31 @@ interface LivePreviewProps {
   mode: PreviewMode;
 }
 
-function DesktopPreview({ title, liveUrl }: { title: string; liveUrl: string }) {
+interface PreviewFrameProps {
+  title: string;
+  liveUrl: string;
+  mode: PreviewMode;
+  onLoad: () => void;
+}
+
+function LoadingOverlay() {
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/95 backdrop-blur-sm">
+      <div className="flex flex-col items-center text-center">
+        <div className="relative flex h-10 w-10 items-center justify-center">
+          <span className="absolute h-10 w-10 animate-ping rounded-full border border-[var(--accent)]/30" />
+          <span className="h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+        </div>
+
+        <p className="mt-4 text-sm font-medium text-foreground">Loading preview</p>
+
+        <p className="mt-1 text-xs text-muted-foreground">Connecting to the live website</p>
+      </div>
+    </div>
+  );
+}
+
+function DesktopPreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.5);
 
@@ -63,6 +87,7 @@ function DesktopPreview({ title, liveUrl }: { title: string; liveUrl: string }) 
     updateScale();
 
     const observer = new ResizeObserver(updateScale);
+
     observer.observe(container);
 
     return () => {
@@ -90,13 +115,13 @@ function DesktopPreview({ title, liveUrl }: { title: string; liveUrl: string }) 
           </div>
         </div>
 
-        <iframe src={liveUrl} title={`${title} desktop preview`} className="block h-[860px] w-[1440px] border-0" loading="lazy" />
+        <iframe key={`${liveUrl}-desktop`} src={liveUrl} title={`${title} desktop preview`} className="block h-[860px] w-[1440px] border-0" loading="eager" onLoad={onLoad} />
       </div>
     </div>
   );
 }
 
-function MobilePreview({ title, liveUrl }: { title: string; liveUrl: string }) {
+function MobilePreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(0.7);
 
@@ -130,6 +155,7 @@ function MobilePreview({ title, liveUrl }: { title: string; liveUrl: string }) {
     updateScale();
 
     const observer = new ResizeObserver(updateScale);
+
     observer.observe(container);
 
     return () => {
@@ -155,6 +181,7 @@ function MobilePreview({ title, liveUrl }: { title: string; liveUrl: string }) {
           }}
         >
           <iframe
+            key={`${liveUrl}-mobile`}
             src={liveUrl}
             title={`${title} mobile preview`}
             className="absolute left-0 top-0 block border-0"
@@ -164,7 +191,8 @@ function MobilePreview({ title, liveUrl }: { title: string; liveUrl: string }) {
               margin: 0,
               padding: 0,
             }}
-            loading="lazy"
+            loading="eager"
+            onLoad={onLoad}
           />
         </div>
       </div>
@@ -173,6 +201,12 @@ function MobilePreview({ title, liveUrl }: { title: string; liveUrl: string }) {
 }
 
 function LivePreview({ title, liveUrl, mode }: LivePreviewProps) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+  }, [liveUrl, mode]);
+
   if (!liveUrl) {
     return (
       <div className="flex h-[752px] items-center justify-center bg-muted/20 lg:aspect-[16/10] lg:h-auto">
@@ -185,7 +219,13 @@ function LivePreview({ title, liveUrl, mode }: LivePreviewProps) {
     );
   }
 
-  return <div className="relative h-[752px] w-full overflow-hidden bg-muted/20 lg:aspect-[16/10] lg:h-auto">{mode === "desktop" ? <DesktopPreview title={title} liveUrl={liveUrl} /> : <MobilePreview title={title} liveUrl={liveUrl} />}</div>;
+  return (
+    <div className="relative h-[752px] w-full overflow-hidden bg-muted/20 lg:aspect-[16/10] lg:h-auto">
+      {mode === "desktop" ? <DesktopPreview title={title} liveUrl={liveUrl} mode={mode} onLoad={() => setIsLoading(false)} /> : <MobilePreview title={title} liveUrl={liveUrl} mode={mode} onLoad={() => setIsLoading(false)} />}
+
+      {isLoading && <LoadingOverlay />}
+    </div>
+  );
 }
 
 export function FeaturedWork() {
