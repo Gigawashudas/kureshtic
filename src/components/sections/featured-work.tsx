@@ -204,7 +204,11 @@ function LivePreview({ title, liveUrl, mode }: LivePreviewProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
+    // Schedule setting loading state asynchronously to avoid
+    // triggering cascading renders by calling setState synchronously
+    // inside the effect body.
+    const id = window.setTimeout(() => setIsLoading(true), 0);
+    return () => window.clearTimeout(id);
   }, [liveUrl, mode]);
 
   if (!liveUrl) {
@@ -255,7 +259,7 @@ export function FeaturedWork() {
                 const isSelected = item.number === selectedProject;
 
                 return (
-                  <button key={item.number} type="button" onClick={() => handleProjectChange(item.number)} className={`group relative flex w-full items-start gap-4 px-4 py-4 text-left transition-all duration-300 ${isSelected ? "bg-[var(--accent)]/10 text-[var(--accent)]" : "text-muted-foreground hover:bg-[var(--accent)]/5 hover:text-[var(--accent)]"}`}>
+                  <button key={item.number} type="button" onClick={() => handleProjectChange(item.number)} className={`group relative flex w-full items-start gap-4 px-4 py-4 text-left transition-all duration-300 ${isSelected ? "bg-(--accent)/10 text-(--accent)" : "text-muted-foreground hover:bg-(--accent)/5 hover:text-(--accent)"}`}>
                     <span className="mt-0.5 font-mono text-xs transition-colors duration-300">{item.number}</span>
 
                     <span className="flex-1">
@@ -270,10 +274,10 @@ export function FeaturedWork() {
               })}
             </div>
 
-            <Link href="/work" className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-foreground transition-colors duration-300 hover:text-[var(--accent)]">
+            {/* <Link href="/work" className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-foreground transition-colors duration-300 hover:text-[var(--accent)]">
               View all work
               <ArrowUpRight className="h-4 w-4" />
-            </Link>
+            </Link> */}
           </div>
 
           <article>
