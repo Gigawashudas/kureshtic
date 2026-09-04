@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+
 import { Geist, Geist_Mono } from "next/font/google";
+
 import { ThemeProvider } from "@wrksz/themes/next";
 
 import { Navigation } from "@/components/layout/navigation";
+import { Footer } from "@/components/layout/footer";
 
 import "./globals.css";
 
@@ -21,9 +24,13 @@ export const metadata: Metadata = {
     default: "KURESHTIC — Technology Partner",
     template: "%s — KURESHTIC",
   },
+
   description: "KURESHTIC helps businesses choose, build, and maintain reliable digital solutions.",
+
   applicationName: "KURESHTIC",
+
   keywords: ["KURESHTIC", "technology partner", "website development", "web application development", "mobile application development", "digital systems", "custom software", "digital solutions"],
+
   robots: {
     index: true,
     follow: true,
@@ -40,7 +47,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Navigation />
+
           {children}
+
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

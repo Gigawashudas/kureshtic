@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ArrowUpRight, Monitor, Smartphone } from "lucide-react";
 import { useState } from "react";
 
-import { Footer } from "@/components/layout/footer";
 import { LivePreview, type PreviewMode } from "@/components/work/live-preview";
 
 const projects = [
@@ -158,8 +157,6 @@ export default function WorkPage() {
           </div>
         </section>
       </main>
-
-      <Footer />
     </>
   );
 }

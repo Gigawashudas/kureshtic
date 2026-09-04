@@ -8,10 +8,10 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const navigationItems = [
   { label: "Work", href: "/work" },
-  { label: "Services", href: "#services" },
-  { label: "Process", href: "#process" },
-  { label: "About", href: "#about" },
-  { label: "Contact", href: "#contact" },
+  { label: "Services", href: "/services" },
+  { label: "Process", href: "/process" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function Navigation() {
