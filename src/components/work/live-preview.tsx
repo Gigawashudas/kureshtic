@@ -38,13 +38,13 @@ function DesktopPreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
   const [scale, setScale] = useState(0.5);
 
   useEffect(() => {
-    const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
-
     function updateScale() {
+      const container = containerRef.current;
+
+      if (!container) {
+        return;
+      }
+
       const width = container.clientWidth;
 
       if (!width) {
@@ -55,6 +55,12 @@ function DesktopPreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
     }
 
     updateScale();
+
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
 
     const observer = new ResizeObserver(updateScale);
 
@@ -99,13 +105,13 @@ function MobilePreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
   const MOBILE_HEIGHT = 750;
 
   useEffect(() => {
-    const container = containerRef.current;
-
-    if (!container) {
-      return;
-    }
-
     function updateScale() {
+      const container = containerRef.current;
+
+      if (!container) {
+        return;
+      }
+
       const width = container.clientWidth;
       const height = container.clientHeight;
 
@@ -114,7 +120,6 @@ function MobilePreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
       }
 
       const availableWidth = Math.min(width - 32, MOBILE_WIDTH);
-
       const availableHeight = height - 32;
 
       const widthScale = availableWidth / MOBILE_WIDTH;
@@ -124,6 +129,12 @@ function MobilePreview({ title, liveUrl, onLoad }: PreviewFrameProps) {
     }
 
     updateScale();
+
+    const container = containerRef.current;
+
+    if (!container) {
+      return;
+    }
 
     const observer = new ResizeObserver(updateScale);
 
@@ -184,21 +195,13 @@ export function LivePreview({ title, liveUrl, mode }: LivePreviewProps) {
     };
   }, [liveUrl, mode]);
 
-  if (!liveUrl) {
-    return (
-      <div className="flex h-[752px] items-center justify-center bg-muted/20 lg:aspect-[16/10] lg:h-auto">
-        <div className="text-center">
-          <p className="text-sm font-medium text-foreground">Live preview coming soon</p>
-
-          <p className="mt-1 text-xs text-muted-foreground">This project will be connected shortly.</p>
-        </div>
-      </div>
-    );
-  }
+  const handleLoad = () => {
+    setIsLoading(false);
+  };
 
   return (
-    <div className="relative h-[752px] w-full overflow-hidden bg-muted/20 lg:aspect-[16/10] lg:h-auto">
-      {mode === "desktop" ? <DesktopPreview title={title} liveUrl={liveUrl} onLoad={() => setIsLoading(false)} /> : <MobilePreview title={title} liveUrl={liveUrl} onLoad={() => setIsLoading(false)} />}
+    <div className="relative h-full w-full overflow-hidden">
+      {mode === "desktop" ? <DesktopPreview title={title} liveUrl={liveUrl} onLoad={handleLoad} /> : <MobilePreview title={title} liveUrl={liveUrl} onLoad={handleLoad} />}
 
       {isLoading && <LoadingOverlay />}
     </div>

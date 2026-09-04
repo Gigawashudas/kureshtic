@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ArrowUpRight, Monitor, Smartphone } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
