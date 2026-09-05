@@ -106,7 +106,7 @@ export default function ContactPage() {
                   </div>
                 </a>
 
-                <a href="https://wa.me/" target="_blank" rel="noreferrer" className="group flex items-start gap-4 border-b border-[var(--border)] py-5">
+                <a href="https://wa.me/8801810013848" target="_blank" rel="noreferrer" className="group flex items-start gap-4 border-b border-[var(--border)] py-5">
                   <MessageCircle size={18} strokeWidth={1.6} className="mt-0.5 shrink-0 text-[var(--text-muted)] transition-colors duration-200 group-hover:text-[var(--accent)]" aria-hidden="true" />
 
                   <div>

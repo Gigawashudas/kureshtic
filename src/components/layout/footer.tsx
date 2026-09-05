@@ -79,17 +79,17 @@ export function Footer() {
             <div className="mt-10 space-y-3 text-sm">
               <p className="text-[var(--text-muted)]">
                 Email:
-                <span className="ml-2 text-[var(--text-secondary)]">your@email.com</span>
+                <span className="ml-2 text-[var(--text-secondary)]">hello@kureshtic.com</span>
               </p>
 
               <p className="text-[var(--text-muted)]">
                 Phone:
-                <span className="ml-2 text-[var(--text-secondary)]">+880 XXX XXX XXXX</span>
+                <span className="ml-2 text-[var(--text-secondary)]">+880 181 001 3848</span>
               </p>
 
               <p className="text-[var(--text-muted)]">
                 Location:
-                <span className="ml-2 text-[var(--text-secondary)]">Your Location</span>
+                <span className="ml-2 text-[var(--text-secondary)]">Dhaka, Bangladesh</span>
               </p>
             </div>
           </div>

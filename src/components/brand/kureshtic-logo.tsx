@@ -13,9 +13,9 @@ export function KureshticLogo({ href = "/", showWordmark = true, className = "" 
 
       {showWordmark && (
         <>
-          <span aria-hidden="true" className="h-5 w-px bg-[var(--border-strong)]" />
+          <span aria-hidden="true" className="h-5 w-px bg-(--border-strong)" />
 
-          <span className="text-lg font-semibold tracking-[-0.04em] text-[var(--text-primary)]">KURESHTIC</span>
+          <span className="text-lg font-semibold tracking-[-0.04em] text-(--text-primary)">KURESHTIC</span>
         </>
       )}
     </span>
