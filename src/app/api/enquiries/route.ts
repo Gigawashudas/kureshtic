@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+
+import { Resend } from "resend";
 import { z } from "zod";
 
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -82,6 +84,34 @@ export async function POST(request: Request) {
         },
         { status: 500 },
       );
+    }
+
+    const resendApiKey = process.env.RESEND_API_KEY;
+
+    if (!resendApiKey) {
+      console.error("Missing RESEND_API_KEY");
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Your enquiry has been submitted successfully.",
+        },
+        { status: 201 },
+      );
+    }
+
+    const resend = new Resend(resendApiKey);
+
+    const { error: emailError } = await resend.emails.send({
+      from: "KURESHTIC <hello@kureshtic.com>",
+      to: ["hreevud@gmail.com"],
+      replyTo: email,
+      subject: `New KURESHTIC Enquiry — ${projectType}`,
+      text: ["New KURESHTIC enquiry", "", `Name: ${firstName} ${lastName}`, `Email: ${email}`, `Phone: ${phone}`, `Company: ${company || "Not provided"}`, `Project Type: ${projectType}`, "", "Message:", message].join("\n"),
+    });
+
+    if (emailError) {
+      console.error("Resend enquiry notification error:", emailError);
     }
 
     return NextResponse.json(
