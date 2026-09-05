@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { Analytics } from "@vercel/analytics/next";
+
 import { ThemeProvider } from "@wrksz/themes/next";
 
 import { Navigation } from "@/components/layout/navigation";
+
 import { Footer } from "@/components/layout/footer";
 
 import "./globals.css";
@@ -41,11 +44,13 @@ export const metadata: Metadata = {
   ],
 
   creator: "KURESHTIC",
+
   publisher: "KURESHTIC",
 
   robots: {
     index: true,
     follow: true,
+
     googleBot: {
       index: true,
       follow: true,
@@ -98,9 +103,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
           }}
         />
 
+        <Analytics />
+
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Navigation />
+
           {children}
+
           <Footer />
         </ThemeProvider>
       </body>
