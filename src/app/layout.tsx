@@ -75,6 +75,14 @@ export const metadata: Metadata = {
   },
 };
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "KURESHTIC",
+  url: "https://kureshtic.com",
+  description: "KURESHTIC is a technology partner helping businesses choose, build, and maintain reliable digital solutions.",
+};
+
 interface RootLayoutProps {
   children: React.ReactNode;
 }
@@ -83,11 +91,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organizationSchema),
+          }}
+        />
+
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Navigation />
-
           {children}
-
           <Footer />
         </ThemeProvider>
       </body>
