@@ -14,11 +14,11 @@ const featuredProjects = [
   },
   {
     number: "02",
-    category: "Interior Photography",
-    title: "ST Photography",
-    description: "A refined portfolio experience built to present spaces, projects, and design work with a strong visual hierarchy and editorial feel.",
+    category: "Rental Business",
+    title: "VirtualTolet",
+    description: "A rental platform",
     tags: ["Website", "Portfolio", "CMS Ready"],
-    liveUrl: "https://st-photography.vercel.app/",
+    liveUrl: "https://www.virtualtolet.com/",
   },
   {
     number: "03",
